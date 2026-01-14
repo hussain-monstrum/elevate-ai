@@ -1,27 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import Twilio from "twilio";
-import { supabase } from "@/lib/supabaseClient";
-import { getStep, formatStepMessage } from "@/lib/elevateForm";
-import { ELEVATE_SMS_FORM } from "@/lib/elevateForm";
+import { getSupabase } from "@/lib/supabaseClient"; // <-- updated import
+import { getStep, formatStepMessage, ELEVATE_SMS_FORM } from "@/lib/elevateForm";
+
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const supabase = getSupabase(); // <-- initialize here
+
   const data = await req.formData();
   const from = data.get("From") as string;
-  const body = (data.get("Body") as string).trim();
-    console.log(data, from, body);
+  const body = (data.get("Body") as string)?.trim();
+  console.log(data, from, body);
+
   if (!from || !body) return new NextResponse("Missing data", { status: 400 });
 
-  if (supabase){
   const { data: sessionData } = await supabase
     .from("sms_sessions")
     .select("*")
     .eq("phone", from)
     .single();
 
-    if (!sessionData) {
-      return new NextResponse("Session not found. Please visit the website to start a new interview.");
-    }
-  
+  if (!sessionData) {
+    return new NextResponse("Session not found. Please visit the website to start a new interview.");
+  }
+
   if (sessionData.completed) return new NextResponse("Session already completed!");
 
   const stepId = sessionData.current_step;
@@ -51,7 +54,7 @@ export async function POST(req: NextRequest) {
       phone: from,
       first_name: answers.first_name || "",
       last_name: answers.last_name || "",
-      role: role,
+      role,
       responses: answers,
     });
 
@@ -60,13 +63,11 @@ export async function POST(req: NextRequest) {
       .update({ answers, completed: true, current_step: step.id })
       .eq("phone", from);
 
+    await supabase.from("voice_call_jobs").insert({ phone: from });
 
-    await supabase
-        .from("voice_call_jobs")
-        .insert({
-            phone: from,
-        });
-    return new NextResponse("✅ Thank you! Your responses have been recorded. Now you will receive a call from Ellie (Our charming and friendly AI assistant) shortly!");
+    return new NextResponse(
+      "✅ Thank you! Your responses have been recorded. Now you will receive a call from Ellie (Our charming and friendly AI assistant) shortly!"
+    );
   }
 
   const nextStep = getStep(nextStepId);
@@ -77,7 +78,4 @@ export async function POST(req: NextRequest) {
     .eq("phone", from);
 
   return new NextResponse(formatStepMessage(nextStep));
-} else {
-    return new NextResponse("Supabase client not initialized", { status: 500 });
-  }
 }
