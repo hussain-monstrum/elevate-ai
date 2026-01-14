@@ -1,12 +1,20 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { supabase } from "../../../lib/db";
+import { NextResponse } from "next/server";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { from, text, sessionId } = req.body;
+export async function POST(req: Request) {
+  const formData = await req.formData();
+
+  const from = formData.get("From");
+  const text = formData.get("Body");
+  const sessionId = formData.get("SessionId");
 
   await supabase.from("responses").insert([
-    { session_id: sessionId, candidate_number: from, text, timestamp: Date.now() }
+    {
+      session_id: sessionId,
+      candidate_number: from,
+      text,
+      timestamp: Date.now(),
+    },
   ]);
 
-  res.status(200).send("Received");
+  return new NextResponse("Received", { status: 200 });
 }
