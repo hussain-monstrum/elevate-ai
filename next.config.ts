@@ -3,6 +3,23 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "media.licdn.com", // LinkedIn profile pictures
+        port: "",
+        pathname: "/**", // allow any path
+      },
+      {
+        protocol: "https",
+        hostname: "static.licdn.com", // additional LinkedIn static assets
+        port: "",
+        pathname: "/**",
+      },
+      // add more patterns if Apify returns proxied images from other hosts
+    ],
+  },
 };
 
 export default withSentryConfig(nextConfig, {
