@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
     console.log(data, from, body);
   if (!from || !body) return new NextResponse("Missing data", { status: 400 });
 
+  if (supabase){
   const { data: sessionData } = await supabase
     .from("sms_sessions")
     .select("*")
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
     if (!sessionData) {
       return new NextResponse("Session not found. Please visit the website to start a new interview.");
     }
+  
   if (sessionData.completed) return new NextResponse("Session already completed!");
 
   const stepId = sessionData.current_step;
@@ -75,4 +77,7 @@ export async function POST(req: NextRequest) {
     .eq("phone", from);
 
   return new NextResponse(formatStepMessage(nextStep));
+} else {
+    return new NextResponse("Supabase client not initialized", { status: 500 });
+  }
 }
