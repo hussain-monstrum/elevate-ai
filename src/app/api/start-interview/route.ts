@@ -2,8 +2,8 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import Twilio from "twilio";
-import { getSupabase } from "@/lib/supabaseClient";
-import { ELEVATE_SMS_FORM, getStep, formatStepMessage } from "@/lib/elevateForm";
+import { getSupabase } from "../../../lib/supabaseClient";
+import { ELEVATE_SMS_FORM, getStep, formatStepMessage } from "../../../lib/elevateForm";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();

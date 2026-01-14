@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Twilio from "twilio";
-import { getSupabase } from "@/lib/supabaseClient"; // <-- updated import
-import { getStep, formatStepMessage, ELEVATE_SMS_FORM } from "@/lib/elevateForm";
+import { getSupabase } from "../../../../lib/supabaseClient"; // <-- updated import
+import { getStep, formatStepMessage, ELEVATE_SMS_FORM } from "../../../../lib/elevateForm";
 
 export const runtime = "nodejs";
 
