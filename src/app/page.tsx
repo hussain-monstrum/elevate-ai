@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import { on } from "events";
 
 interface LinkedInProfile {
   firstName: string;
@@ -20,8 +19,8 @@ export default function Home() {
     profile: null as LinkedInProfile | null,
   });
 
-  const [pressed, setPressed] = useState(false);
   const [started, setStarted] = useState(false);
+  const [twilioNumber, setTwilioNumber] = useState("");
 
   const [manualData, setManualData] = useState({
     firstName: "",
@@ -29,99 +28,71 @@ export default function Home() {
     phone: "",
   });
 
-  // Load stored LinkedIn/manual data once
-  // useEffect(() => {
-  //   const saved = localStorage.getItem("linkedinProfile");
-  //   if (!saved) return;
-
-  //   const profile = JSON.parse(saved) as LinkedInProfile;
-
-  //   function update(){
-  //   setState({
-  //     clicked: false,
-  //     mode: null,
-  //     profile,
-  //   });}
-  //   update();
-  // }, []);
-
   const { clicked, mode, profile } = state;
-  const [score, setScore] = useState<number | null>(null);
-
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showMessageModal, setShowMessageModal] = useState(false);
 
   const startInterview = async () => {
-    setStarted(true);
-    const res = await fetch("/api/start-interview", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ phone: manualData.phone }),
-    });
-    const data = await res.json();
-    setSessionId(data.sessionId);
-    setShowMessageModal(true);
+    if (!profile?.phone) {
+      alert("Phone number is required");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/start-interview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone: profile.phone,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          role: profile.headline || "",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        setTwilioNumber(data.twilioNumber);
+        setStarted(true);
+        setShowMessageModal(true);
+      } else {
+        alert(data.error || "Failed to start session");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("An error occurred");
+    }
   };
 
-  const startVoice = async () => {
-    if (!sessionId) return;
-    const res = await fetch("/api/start-voice", {
-      method: "POST",
-      body: JSON.stringify({ sessionId }),
-    });
-    const data = await res.json();
-    alert("Voice call started!");
+  const openSMSApp = () => {
+    const message = encodeURIComponent("Hi Ellie, I would like to join Elevate!");
+    window.location.href = `sms:${twilioNumber}?body=${message}`;
   };
-
-  const getScore = async () => {
-    if (!sessionId) return;
-    const res = await fetch(`/api/score-interview?sessionId=${sessionId}`);
-    const data = await res.json();
-    setScore(data.overallScore);
-  };
-
-  // function handleAISubmit() {
-  //   if (!profile) return;
-
-  //   const phone = profile.phone?.replace(/\D/g, ""); // clean digits only
-  //   if (!phone) {
-  //     alert("Phone number is missing.");
-  //     return;
-  //   }
-
-  //   const message = `Hi ${profile.firstName}, thanks for getting started with Elevate AI! This is your onboarding assistant.`;
-
-  //   // Encode message for URL
-  //   const encodedMessage = encodeURIComponent(message);
-
-  //   // Open SMS app with prefilled message
-  //   window.location.href = `sms:${phone}?body=${encodedMessage}`;
-  // }
 
   // Save manual info
   function handleManualSubmit() {
+    if (!manualData.firstName || !manualData.lastName || !manualData.phone) {
+      alert("Please fill in all fields");
+      return;
+    }
+
     const newProfile = {
       firstName: manualData.firstName,
       lastName: manualData.lastName,
       phone: manualData.phone,
-      picture: "/default-avatar.png", // optional placeholder
-      headline: "Manual Profile",
+      picture: "/default-avatar.png",
+      headline: "",
       email: "",
     };
 
-    // Save to localStorage
-    localStorage.setItem("linkedinProfile", JSON.stringify(newProfile));
-
-    // Set state
     setState({
       clicked: true,
       mode: "manual",
       profile: newProfile,
     });
   }
-
-  const [showMessageModal, setShowMessageModal] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
@@ -158,12 +129,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* ——————————————————————— */}
       {/* MANUAL ENTRY MODAL */}
-      {/* ——————————————————————— */}
       {clicked && mode === "manual" && !profile && (
         <div className="mt-10 p-6 border rounded-2xl shadow-lg w-96 bg-gray-50">
-          <h2 className="text-lg  text-black rounded-2xl italic  required font-semibold mb-4 text-center">
+          <h2 className="text-lg text-black rounded-2xl italic required font-semibold mb-4 text-center">
             Enter Your Details
           </h2>
 
@@ -190,7 +159,7 @@ export default function Home() {
 
             <input
               type="tel"
-              placeholder="Phone Number"
+              placeholder="Phone Number (e.g., +1234567890)"
               value={manualData.phone}
               onChange={(e) =>
                 setManualData({ ...manualData, phone: e.target.value })
@@ -200,7 +169,7 @@ export default function Home() {
 
             <button
               onClick={handleManualSubmit}
-              className="mt-4 bg-black text-white py-3 rounded-lg"
+              className="mt-4 bg-black text-white py-3 rounded-lg hover:bg-gray-800 transition"
             >
               Continue
             </button>
@@ -212,13 +181,13 @@ export default function Home() {
       {profile && (
         <div
           className="
-      mt-14 w-96 p-8 rounded-3xl
-      bg-white/40 backdrop-blur-xl
-      shadow-[0_8px_30px_rgb(0,0,0,0.12)]
-      border border-white/30
-      relative flex flex-col items-center
-      transition-all duration-300 hover:scale-[1.02]
-    "
+            mt-14 w-96 p-8 rounded-3xl
+            bg-white/40 backdrop-blur-xl
+            shadow-[0_8px_30px_rgb(0,0,0,0.12)]
+            border border-white/30
+            relative flex flex-col items-center
+            transition-all duration-300 hover:scale-[1.02]
+          "
         >
           {/* Decorative glowing circle background */}
           <div className="absolute -top-10 w-40 h-40 bg-blue-300/20 rounded-full blur-3xl"></div>
@@ -227,10 +196,10 @@ export default function Home() {
           {/* Profile Image with gradient ring */}
           <div
             className="
-        w-36 h-36 rounded-full p-[3px]
-        bg-linear-to-br from-blue-500 via-purple-400 to-pink-400
-        shadow-lg
-      "
+              w-36 h-36 rounded-full p-[3px]
+              bg-linear-to-br from-blue-500 via-purple-400 to-pink-400
+              shadow-lg
+            "
           >
             <Image
               src={profile.picture || "/default-avatar.png"}
@@ -253,11 +222,6 @@ export default function Home() {
             </p>
           )}
 
-          {/* Optional email */}
-          {profile.email && (
-            <p className="mt-2 text-sm text-gray-600">{profile.email}</p>
-          )}
-
           {/* Phone */}
           {profile.phone && (
             <p className="mt-1 text-sm font-medium text-gray-500">
@@ -266,76 +230,65 @@ export default function Home() {
           )}
 
           {/* Button */}
-
           <button
             onClick={startInterview}
             disabled={started}
             className="
-                      mt-6 w-full py-3 rounded-xl
-                      bg-black text-white
-                      text-lg font-semibold tracking-wide
-                      transition-all duration-300 hover:bg-gray-900 hover:shadow-xl
-                      "
+              mt-6 w-full py-3 rounded-xl
+              bg-black text-white
+              text-lg font-semibold tracking-wide
+              transition-all duration-300 hover:bg-gray-900 hover:shadow-xl
+              disabled:opacity-50 disabled:cursor-not-allowed
+            "
           >
-            {started ? "Message Sent!" : "Talk with Ellie"}
+            {started ? "Session Started!" : "Talk with Ellie"}
           </button>
-
-          {/* <button onClick={startVoice} disabled={!started}>
-            Start Voice Interview
-          </button> */}
-
-          {/* <button onClick={getScore} disabled={!started}>
-            Get Score
-          </button> */}
-          {score !== null && <p>Candidate Score: {score}</p>}
         </div>
       )}
 
+      {/* MESSAGE MODAL */}
       {showMessageModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-    <div className="bg-white rounded-3xl p-8 w-96 shadow-2xl text-center relative">
-      {/* Close button */}
-      <button
-        onClick={() => setShowMessageModal(false)}
-        className="absolute top-4 right-4 text-gray-400 hover:text-black"
-      >
-        ✕
-      </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 w-96 shadow-2xl text-center relative">
+            {/* Close button */}
+            <button
+              onClick={() => setShowMessageModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-black"
+            >
+              ✕
+            </button>
 
-      {/* Messages icon */}
-      <div className="flex justify-center mb-4">
-        <div className="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center shadow-lg">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-10 h-10 text-white"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path d="M20 2H4C2.9 2 2 2.9 2 4v14l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-          </svg>
+            {/* Messages icon */}
+            <div className="flex justify-center mb-4">
+              <div className="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center shadow-lg">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-10 h-10 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M20 2H4C2.9 2 2 2.9 2 4v14l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+                </svg>
+              </div>
+            </div>
+
+            <h3 className="text-2xl font-semibold text-gray-900">
+              Ready to Talk to Ellie?
+            </h3>
+
+            <p className="mt-2 text-gray-600">
+              Click below to send a text message and Ellie will call you shortly!
+            </p>
+
+            <button
+              onClick={openSMSApp}
+              className="mt-6 w-full py-3 rounded-xl bg-black text-white text-lg font-semibold hover:bg-gray-900 transition"
+            >
+              Open Messages
+            </button>
+          </div>
         </div>
-      </div>
-
-      <h3 className="text-2xl font-semibold text-gray-900">
-        Message Sent
-      </h3>
-
-      <p className="mt-2 text-gray-600">
-        Ellie just sent you a message to get started! Check your messages.
-      </p>
-
-      <button
-        onClick={() => {
-          window.location.href = "sms:+18668256571";
-        }}
-        className="mt-6 w-full py-3 rounded-xl bg-black text-white text-lg font-semibold hover:bg-gray-900 transition"
-      >
-        Open Messages
-      </button>
-    </div>
-  </div>
-)}
-
+      )}
     </div>
   );
 }
