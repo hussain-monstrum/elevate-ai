@@ -54,7 +54,7 @@ export default function ViewScoresPage() {
             const cleanJson = rawScore.replace(/```json/g, '').replace(/```/g, '').trim();
             return JSON.parse(cleanJson);
           } catch (e) {
-            return { score: 'N/A', verdict: 'Error', reasoning: 'Invalid format' };
+            return { score: 0, verdict: 'Error', reasoning: 'Invalid format' };
           }
         };
 
