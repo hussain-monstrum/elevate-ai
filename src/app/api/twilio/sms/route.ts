@@ -44,6 +44,6 @@ export async function POST(req: NextRequest) {
   await supabase.from("voice_call_jobs").insert({ phone: from });
 
   return new NextResponse(
-    "✅ Thank you for reaching out! You will receive a call from Ellie (our charming and friendly AI assistant) shortly!"
+    "Hey! It’s Ellie. My mission is to get you in the right rooms with the right people 🥂" + "\n\nI'd love to hear a bit more about what you're doing nowadays so I can start opening those doors for you. Mind if we dive into a few quick details over a call?"
   );
 }
