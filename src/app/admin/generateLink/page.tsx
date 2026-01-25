@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link"; // Import Link for navigation
 import { getSupabase } from "../../../lib/supabaseClient";
+import { ChartBarIcon } from "@heroicons/react/24/outline"; // Added an icon for better UX
 
 export default function GenerateLinkPage() {
   const supabase = getSupabase();
@@ -24,7 +26,6 @@ export default function GenerateLinkPage() {
     const { name, value } = e.target;
 
     if (name === "phone_number") {
-      // Prevent user from typing +1 manually
       const sanitized = value.replace(/^\+1/, "");
       setForm({ ...form, [name]: sanitized });
     } else {
@@ -38,13 +39,12 @@ export default function GenerateLinkPage() {
     setMessage(null);
     setInviteLink(null);
 
-    // Call RPC function that creates profile + invitee + generates unique link
     const { data: link, error } = await supabase.rpc(
       "create_invitee_profile_with_link",
       {
         p_first_name: form.first_name,
         p_last_name: form.last_name,
-        p_phone: `+1${form.phone_number}`, // always prepend +1
+        p_phone: `+1${form.phone_number}`,
         p_role: form.role,
         p_achievements: form.achievements,
         p_referred_by: form.referred_by,
@@ -70,7 +70,18 @@ export default function GenerateLinkPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-6">
+    <div className="min-h-screen flex items-center justify-center bg-white px-6 relative">
+      {/* Admin Navigation Button */}
+      {/* <div className="absolute top-6 right-6">
+        <Link
+          href="/admin/viewScores"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-black text-sm font-medium hover:bg-black hover:text-white transition-all duration-200"
+        >
+          <ChartBarIcon className="h-4 w-4" />
+          View Scores
+        </Link>
+      </div> */}
+
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-lg space-y-4 rounded-xl border p-8 shadow"
@@ -97,7 +108,6 @@ export default function GenerateLinkPage() {
           className="w-full border p-3 border-black rounded italic text-gray-600"
         />
 
-        {/* Phone input with US flag +1 */}
         <div className="flex items-center border border-black rounded overflow-hidden">
           <span className="flex items-center px-3 bg-gray-100 text-gray-700 border-r border-black">
             🇺🇸 +1
@@ -109,9 +119,9 @@ export default function GenerateLinkPage() {
             onChange={handleChange}
             required
             type="tel"
-            pattern="\d{10}" // exactly 10 digits
+            pattern="\d{10}"
             title="Phone number must be exactly 10 digits"
-            maxLength={10} // prevent typing more than 10 digits
+            maxLength={10}
             className="w-full p-3 outline-none italic text-gray-600"
           />
         </div>
