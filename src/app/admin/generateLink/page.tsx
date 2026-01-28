@@ -21,7 +21,7 @@ export default function GenerateLinkPage() {
   const [inviteLink, setInviteLink] = useState<string | null>(null);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
 
@@ -126,14 +126,23 @@ export default function GenerateLinkPage() {
           />
         </div>
 
-        <input
+        <select
           name="role"
-          placeholder="Role"
           value={form.role}
           onChange={handleChange}
           required
-          className="w-full border p-3 border-black rounded italic text-gray-600"
-        />
+          aria-label="Role"
+          className="w-full border p-3 border-black rounded italic text-gray-600 bg-white"
+        >
+          <option value="" disabled>
+            Select Role
+          </option>
+          <option value="Founder">Fast-Track Approved</option>
+          <option value="Executive">Investor/VC</option>
+          <option value="Angel Investor">Angel Investor</option>
+          <option value="VC Partner">VC Partner</option>
+          <option value="Advisor">Advisor</option>
+        </select>
 
         <textarea
           name="achievements"
