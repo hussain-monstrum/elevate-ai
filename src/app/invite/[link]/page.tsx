@@ -18,7 +18,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
   const supabase = getSupabase();
 
   const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    process.env.NEXT_PUBLIC_APP_BASE_URL || "http://localhost:3000";
   const fullInviteUrl = `${baseUrl}/invite/${link}`;
 
   /**
