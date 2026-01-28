@@ -137,11 +137,9 @@ export default function GenerateLinkPage() {
           <option value="" disabled>
             Select Role
           </option>
-          <option value="Founder">Fast-Track Approved</option>
-          <option value="Executive">Investor/VC</option>
-          <option value="Angel Investor">Angel Investor</option>
-          <option value="VC Partner">VC Partner</option>
-          <option value="Advisor">Advisor</option>
+          <option value="Fast-Track Approved">Fast-Track Approved</option>
+          <option value="Investor/VC">Investor/VC</option>
+          <option value="Investor/VC">Verified Member</option>
         </select>
 
         <textarea
