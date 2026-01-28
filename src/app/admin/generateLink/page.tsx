@@ -139,7 +139,7 @@ export default function GenerateLinkPage() {
           </option>
           <option value="Fast-Track Approved">Fast-Track Approved</option>
           <option value="Investor/VC">Investor/VC</option>
-          <option value="Investor/VC">Verified Member</option>
+          <option value="Verified Member">Verified Member</option>
         </select>
 
         <textarea
